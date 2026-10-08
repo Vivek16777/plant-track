@@ -153,6 +153,30 @@ class IotController:
             return jsonify({'status': 'error', 'message': str(e)}), 500
 
     @staticmethod
+    def get_latest_telemetry(plant_id):
+        """Fetch the latest telemetry reading for a specific plant via JSON API"""
+        reading = SensorReading.query.filter_by(plant_id=plant_id).order_by(
+            SensorReading.timestamp.desc()
+        ).first()
+        
+        if not reading:
+            return jsonify({'status': 'error', 'message': 'No readings found'}), 404
+            
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'id': reading.plant_id,
+                'temperature': reading.temperature,
+                'humidity': reading.humidity,
+                'soil_moisture': reading.soil_moisture,
+                'soil_ph': reading.soil_ph,
+                'light_intensity': reading.light_intensity,
+                'rain_level': reading.rain_level,
+                'water_tank_level': reading.water_tank_level
+            }
+        })
+
+    @staticmethod
     def _create_alert(user_id, message, category):
         """Helper to create and save alerts/notifications"""
         # Avoid duplicate unread alerts with identical messages

@@ -258,6 +258,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selector.value) {
         updateGauges(selector.value);
     }
+    
+    // Auto-refresh telemetry data every 5 seconds
+    setInterval(() => {
+        const currentPlantId = selector.value;
+        if (!currentPlantId) return;
+        
+        fetch(`/api/telemetry/${currentPlantId}/latest`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    telemetryData[currentPlantId] = res.data;
+                    updateGauges(currentPlantId);
+                }
+            })
+            .catch(err => console.error("Error fetching live telemetry:", err));
+    }, 5000);
 });
 </script>
 {% endblock %}

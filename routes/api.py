@@ -14,6 +14,11 @@ def receive_telemetry():
 def simulate_telemetry():
     return IotController.simulate_telemetry_batch()
 
+@api_bp.route('/api/telemetry/<int:plant_id>/latest', methods=['GET'])
+@login_required
+def get_latest_telemetry(plant_id):
+    return IotController.get_latest_telemetry(plant_id)
+
 @api_bp.route('/api/weather-proxy', methods=['GET'])
 @login_required
 def weather_proxy():
