@@ -1,0 +1,428 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ plant.name }} Profile - Precision Crop AI{% endblock %}
+{% block page_title %}{{ plant.name }} Crop Analysis{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-6">
+        <a href="{{ url_for('plant.list_plants') }}" class="btn btn-light rounded-pill px-3" style="font-size: 13px; font-weight: 500;">
+            <i class="fa-solid fa-arrow-left me-2"></i>Back to Registry
+        </a>
+    </div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('plant.download_report', plant_id=plant.id) }}" class="btn btn-outline-success rounded-pill px-4" style="font-size: 13px; font-weight: 600;">
+            <i class="fa-solid fa-file-pdf me-2"></i>Generate PDF Report
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Column 1: Plant profile + diagnostics -->
+    <div class="col-lg-4">
+        <!-- Plant profile card -->
+        <div class="card-glass">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h3 class="fw-bold mb-1" style="font-size: 20px;">{{ plant.name }}</h3>
+                    <span id="plant-status-badge" class="badge-status {% if plant.status == 'Healthy' %}badge-healthy{% else %}badge-diseased{% endif %}">{{ plant.status }}</span>
+                </div>
+                <div class="stat-icon icon-primary p-2"><i class="fa-solid fa-sprout"></i></div>
+            </div>
+            
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <div class="d-flex justify-content-between border-bottom border-light pb-2">
+                    <span class="text-secondary">Crop Type:</span>
+                    <span class="fw-semibold">{{ plant.crop_type }}</span>
+                </div>
+                <div class="d-flex justify-content-between border-bottom border-light pb-2">
+                    <span class="text-secondary">Soil Type:</span>
+                    <span class="fw-semibold">{{ plant.soil_type }}</span>
+                </div>
+                <div class="d-flex justify-content-between border-bottom border-light pb-2">
+                    <span class="text-secondary">Sowing Date:</span>
+                    <span class="fw-semibold">{{ plant.sowing_date.strftime('%Y-%m-%d') }}</span>
+                </div>
+                <div class="d-flex justify-content-between border-bottom border-light pb-2">
+                    <span class="text-secondary">Age:</span>
+                    <span class="fw-semibold">{{ plant.current_age }} days</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-secondary">Current Height:</span>
+                    <span class="fw-semibold text-success">{{ plant.height_cm }} cm</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disease Diagnosis upload card -->
+        <div class="card-glass">
+            <div class="card-title-main"><i class="fa-solid fa-camera me-2 text-danger"></i>AI Leaf Disease Diagnosis</div>
+            
+            <form id="disease-upload-form" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="leaf-file-input" class="form-label text-secondary" style="font-size: 12px;">UPLOAD LEAF IMAGE</label>
+                    <input class="form-control" type="file" id="leaf-file-input" name="file" accept="image/*" required>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm w-100 py-2 rounded-pill fw-semibold" id="btn-diagnose">
+                    <i class="fa-solid fa-magnifying-glass-chart me-2"></i>Analyze Leaf Health
+                </button>
+            </form>
+            
+            <!-- Diagnose prediction result placeholder -->
+            <div id="disease-result-box" class="mt-3 p-3 rounded" style="display: none; background-color: var(--bg-primary); border: 1px solid var(--border-color); font-size: 13px;">
+                <div class="fw-bold text-danger mb-2" id="res-diag-name">Tomato Early Blight (95.4%)</div>
+                <div class="mb-2"><b>Species:</b> <span id="res-diag-species" class="fw-semibold text-primary"></span></div>
+                <div class="mb-2"><b>Severity:</b> <span id="res-diag-severity" class="fw-semibold">Medium</span></div>
+                <div class="mb-2"><b>Description:</b> <span id="res-diag-desc"></span></div>
+                <div class="mb-2"><b>Causes:</b> <span id="res-diag-causes"></span></div>
+                <div class="mb-2"><b>Prevention:</b> <span id="res-diag-prevent"></span></div>
+                <div class="mb-2"><b>Fungicide:</b> <span id="res-diag-fungi" class="text-success fw-semibold"></span></div>
+                <div><b>Recovery Time:</b> <span id="res-diag-recovery" class="fw-semibold"></span></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Column 2: ML Growth predictions & Advice recommendations -->
+    <div class="col-lg-8">
+        <!-- Plant growth prediction card -->
+        <div class="card-glass">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-title-main mb-0"><i class="fa-solid fa-chart-line-up me-2 text-success"></i>ML Growth Projection Engine</div>
+                <button id="btn-run-prediction" class="btn btn-success btn-sm rounded-pill px-3 fw-semibold">Compute Forecast</button>
+            </div>
+            
+            <div class="row g-3" id="prediction-stats-wrapper">
+                {% if latest_pred %}
+                <div class="col-md-4 text-center border-end border-light">
+                    <div class="text-muted" style="font-size: 11px;">CURRENT STAGE</div>
+                    <h5 class="fw-bold mt-1" id="pred-stage">{{ latest_pred.current_stage }}</h5>
+                </div>
+                <div class="col-md-4 text-center border-end border-light">
+                    <div class="text-muted" style="font-size: 11px;">GROWTH RATE</div>
+                    <h5 class="fw-bold mt-1" id="pred-rate">{{ latest_pred.growth_rate }} cm/day</h5>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="text-muted" style="font-size: 11px;">EST. HARVEST DATE</div>
+                    <h5 class="fw-bold mt-1 text-success" id="pred-harvest">{{ latest_pred.estimated_harvest.strftime('%Y-%m-%d') }}</h5>
+                </div>
+                <div class="col-md-4 text-center border-end border-light pt-3">
+                    <div class="text-muted" style="font-size: 11px;">HEIGHT IN 7 DAYS</div>
+                    <h5 class="fw-bold mt-1" id="pred-7d">{{ latest_pred.height_7d }} cm</h5>
+                </div>
+                <div class="col-md-4 text-center border-end border-light pt-3">
+                    <div class="text-muted" style="font-size: 11px;">HEIGHT IN 30 DAYS</div>
+                    <h5 class="fw-bold mt-1" id="pred-30d">{{ latest_pred.height_30d }} cm</h5>
+                </div>
+                <div class="col-md-4 text-center pt-3">
+                    <div class="text-muted" style="font-size: 11px;">HEALTH INDEX</div>
+                    <h5 class="fw-bold mt-1" id="pred-health">{{ latest_pred.health_score }}%</h5>
+                </div>
+                {% else %}
+                <div class="col-12 text-center py-4 text-muted" id="no-prediction-text">
+                    <i class="fa-solid fa-clock-rotate-left fa-2x mb-2 text-secondary"></i>
+                    <p style="font-size: 13px;">No growth predictions computed yet. Click "Compute Forecast" above.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recommendations tabs -->
+        <div class="card-glass">
+            <div class="card-title-main"><i class="fa-solid fa-lightbulb-on me-2 text-success"></i>Farming Advice & Soil Profile</div>
+            
+            <ul class="nav nav-tabs border-bottom border-light mb-3" id="recommendationsTab" role="tablist" style="font-size: 13px;">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active text-success fw-semibold" id="irrigation-tab" data-bs-toggle="tab" data-bs-target="#irrigation" type="button" role="tab" aria-controls="irrigation" aria-selected="true">Irrigation</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-success fw-semibold" id="fertilizer-tab" data-bs-toggle="tab" data-bs-target="#fertilizer" type="button" role="tab" aria-controls="fertilizer" aria-selected="false">Nutrition / NPK</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-success fw-semibold" id="soil-tab" data-bs-toggle="tab" data-bs-target="#soil" type="button" role="tab" aria-controls="soil" aria-selected="false">Soil Analysis</button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="recommendationsTabContent" style="font-size: 13px; line-height: 1.6;">
+                <!-- Irrigation Tab -->
+                <div class="tab-pane fade show active" id="irrigation" role="tabpanel" aria-labelledby="irrigation-tab">
+                    {% if irrigation_advice %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border border-light bg-light">
+                                <div class="text-secondary" style="font-size: 11px;">WATER VOLUME REQUIRED</div>
+                                <div class="fw-bold fs-5 text-success">{{ irrigation_advice.water_amount_ml }} ml</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border border-light bg-light">
+                                <div class="text-secondary" style="font-size: 11px;">WATERING FREQUENCY</div>
+                                <div class="fw-bold fs-5">{{ irrigation_advice.frequency }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="mb-2"><b>Irrigation Method:</b> {{ irrigation_advice.method }}</div>
+                            <div class="mb-2"><b>Best Time to Irrigate:</b> {{ irrigation_advice.best_time }}</div>
+                            <div><b>Decision Rationale:</b> {{ irrigation_advice.reason }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-muted">Waiting for active sensor readings to calculate advice.</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Fertilizer Tab -->
+                <div class="tab-pane fade" id="fertilizer" role="tabpanel" aria-labelledby="fertilizer-tab">
+                    {% if fertilizer_advice %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border border-light bg-light">
+                                <div class="text-secondary" style="font-size: 11px;">RECOMMENDED FERTILIZER</div>
+                                <div class="fw-bold fs-5 text-success">{{ fertilizer_advice.fertilizer_name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border border-light bg-light">
+                                <div class="text-secondary" style="font-size: 11px;">DOSAGE QUANTITY</div>
+                                <div class="fw-bold fs-5">{{ fertilizer_advice.quantity_g }} grams</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="mb-2"><b>Target NPK Ratio:</b> {{ fertilizer_advice.npk_ratio }}</div>
+                            <div class="mb-2"><b>Organic Alternatives:</b> {{ fertilizer_advice.organic_alternative }}</div>
+                            <div><b>Application Schedule:</b> {{ fertilizer_advice.schedule }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-muted">Waiting for active telemetry to construct nutrition report.</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Soil Analysis Tab -->
+                <div class="tab-pane fade" id="soil" role="tabpanel" aria-labelledby="soil-tab">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border border-light bg-light">
+                                <div class="text-secondary" style="font-size: 11px;">SOIL HEALTH SCORE</div>
+                                <div class="fw-bold fs-5 text-success">{{ soil_analysis.soil_health_score }}/100</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border border-light bg-light">
+                                <div class="text-secondary" style="font-size: 11px;">WATER RETENTION</div>
+                                <div class="fw-bold fs-5">{{ soil_analysis.water_retention }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="mb-2"><b>Soil Quality evaluation:</b> {{ soil_analysis.soil_quality }}</div>
+                            <div class="mb-2"><b>Nutrient Capacity:</b> {{ soil_analysis.nutrient_capacity }}</div>
+                            <div><b>Suitable Crop Alternations:</b> {{ soil_analysis.suitable_crops | join(', ') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chronological historical telemetry graph -->
+<div class="row">
+    <div class="col-12">
+        <div class="card-glass">
+            <div class="card-title-main"><i class="fa-solid fa-chart-line me-2 text-success"></i>Telemetry Trends Dashboard (Last 10 Readings)</div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="detailTelemetryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Prediction Action Button
+    const btnPred = document.getElementById('btn-run-prediction');
+    if (btnPred) {
+        btnPred.addEventListener('click', () => {
+            btnPred.disabled = true;
+            btnPred.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i>Computing...`;
+            
+            fetch('/plants/{{ plant.id }}/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    // Inject predictions into stats columns
+                    const wrapper = document.getElementById('prediction-stats-wrapper');
+                    wrapper.innerHTML = `
+                        <div class="col-md-4 text-center border-end border-light">
+                            <div class="text-muted" style="font-size: 11px;">CURRENT STAGE</div>
+                            <h5 class="fw-bold mt-1">${res.data.current_stage}</h5>
+                        </div>
+                        <div class="col-md-4 text-center border-end border-light">
+                            <div class="text-muted" style="font-size: 11px;">GROWTH RATE</div>
+                            <h5 class="fw-bold mt-1">${res.data.growth_rate} cm/day</h5>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="text-muted" style="font-size: 11px;">EST. HARVEST DATE</div>
+                            <h5 class="fw-bold mt-1 text-success">${res.data.estimated_harvest}</h5>
+                        </div>
+                        <div class="col-md-4 text-center border-end border-light pt-3">
+                            <div class="text-muted" style="font-size: 11px;">HEIGHT IN 7 DAYS</div>
+                            <h5 class="fw-bold mt-1">${res.data.height_7d} cm</h5>
+                        </div>
+                        <div class="col-md-4 text-center border-end border-light pt-3">
+                            <div class="text-muted" style="font-size: 11px;">HEIGHT IN 30 DAYS</div>
+                            <h5 class="fw-bold mt-1">${res.data.height_30d} cm</h5>
+                        </div>
+                        <div class="col-md-4 text-center pt-3">
+                            <div class="text-muted" style="font-size: 11px;">HEALTH INDEX</div>
+                            <h5 class="fw-bold mt-1">${res.data.health_score}%</h5>
+                        </div>
+                    `;
+                } else {
+                    alert('Prediction error: ' + res.message);
+                    btnPred.disabled = false;
+                    btnPred.innerHTML = 'Compute Forecast';
+                }
+            })
+            .catch(err => {
+                alert('Connection error predicting growth: ' + err);
+                btnPred.disabled = false;
+                btnPred.innerHTML = 'Compute Forecast';
+            });
+        });
+    }
+
+    // Leaf Disease upload form submission
+    const formDiag = document.getElementById('disease-upload-form');
+    const btnDiag = document.getElementById('btn-diagnose');
+    
+    if (btnDiag && formDiag) {
+        btnDiag.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Manual form validation since type="button" won't trigger native validation UI
+            if (!formDiag.checkValidity()) {
+                formDiag.reportValidity();
+                return;
+            }
+            
+            btnDiag.disabled = true;
+            btnDiag.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i>Analyzing...`;
+            
+            const formData = new FormData(formDiag);
+            
+            fetch('/plants/{{ plant.id }}/diagnose', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    const resultBox = document.getElementById('disease-result-box');
+                    
+                    document.getElementById('res-diag-name').textContent = `${res.data.disease_name} (${res.data.confidence.toFixed(1)}%)`;
+                    document.getElementById('res-diag-species').textContent = res.data.species_name || 'Unknown';
+                    document.getElementById('res-diag-severity').textContent = res.data.severity;
+                    
+                    // Set severity colors
+                    const sevEl = document.getElementById('res-diag-severity');
+                    sevEl.className = 'fw-semibold';
+                    if (res.data.severity === 'Healthy') sevEl.style.color = '#27ae60';
+                    else if (res.data.severity === 'Medium') sevEl.style.color = '#f1c40f';
+                    else sevEl.style.color = '#e74c3c';
+                    
+                    document.getElementById('res-diag-desc').textContent = res.data.description;
+                    document.getElementById('res-diag-causes').textContent = res.data.causes;
+                    document.getElementById('res-diag-prevent').textContent = res.data.prevention;
+                    document.getElementById('res-diag-fungi').textContent = res.data.recommended_fungicide;
+                    document.getElementById('res-diag-recovery').textContent = res.data.recovery_time;
+                    
+                    resultBox.style.display = 'block';
+                    btnDiag.disabled = false;
+                    btnDiag.innerHTML = `<i class="fa-solid fa-magnifying-glass-chart me-2"></i>Analyze Leaf Health`;
+                    
+                    // Update status badge dynamically instead of reloading the page
+                    const badge = document.getElementById('plant-status-badge');
+                    if (badge) {
+                        const newStatus = res.data.is_healthy ? 'Healthy' : 'Diseased';
+                        badge.textContent = newStatus;
+                        badge.className = 'badge-status ' + (newStatus === 'Healthy' ? 'badge-healthy' : 'badge-diseased');
+                    }
+                } else {
+                    alert('Diagnostic upload error: ' + res.message);
+                    btnDiag.disabled = false;
+                    btnDiag.innerHTML = `<i class="fa-solid fa-magnifying-glass-chart me-2"></i>Analyze Leaf Health`;
+                }
+            })
+            .catch(err => {
+                alert('Connection error analyzing plant leaf: ' + err);
+                btnDiag.disabled = false;
+                btnDiag.innerHTML = `<i class="fa-solid fa-magnifying-glass-chart me-2"></i>Analyze Leaf Health`;
+            });
+        });
+    }
+
+    // Telemetry trend line charts
+    const ctx = document.getElementById('detailTelemetryChart').getContext('2d');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? '#2d3e33' : '#e9ecef';
+    const textColor = isDark ? '#bdc3c7' : '#7f8c8d';
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ dates | tojson }},
+            datasets: [
+                {
+                    label: 'Moisture (%)',
+                    data: {{ moisture_vals | tojson }},
+                    borderColor: '#2ecc71',
+                    borderWidth: 2,
+                    tension: 0.2,
+                    fill: false
+                },
+                {
+                    label: 'Temp (°C)',
+                    data: {{ temp_vals | tojson }},
+                    borderColor: '#e67e22',
+                    borderWidth: 2,
+                    tension: 0.2,
+                    fill: false
+                },
+                {
+                    label: 'Humidity (%)',
+                    data: {{ humidity_vals | tojson }},
+                    borderColor: '#3498db',
+                    borderWidth: 2,
+                    tension: 0.2,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor }
+                },
+                y: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: textColor }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1284,18 +1284,17 @@
             }
         }
         
-        // Function to update soil type based on selected region
         function updateSoilTypeBasedOnRegion(regionName) {
-            // Mapping of regions to common soil types
+            // Mapping of regions to common soil types matching the dropdown options
             const soilTypeMap = {
-                'Vidarbha': 'Black Soil',
-                'Marathwada': 'Black Soil',
-                'Western Maharashtra': 'Red Soil',
-                'Konkan': 'Laterite Soil',
-                'North Maharashtra': 'Medium Black Soil'
+                'Vidarbha': 'Black',
+                'Marathwada': 'Black',
+                'Western Maharashtra': 'Red',
+                'Konkan': 'Laterite',
+                'North Maharashtra': 'Black' // default to 'Black' as nearest match for Medium Black
             };
             
-            const soilType = soilTypeMap[regionName] || 'Black Soil';
+            const soilType = soilTypeMap[regionName] || 'Black';
             const soilSelect = document.getElementById('soil_type');
             
             // Find the option with the matching text
@@ -1317,18 +1316,9 @@
                     soilSelect.classList.remove('field-updated');
                 }, 1000);
                 
-                // Update soil preview image when selected automatically
-                const previewImage = document.getElementById('soil-preview-image');
-                const previewInfo = document.getElementById('soil-preview-info');
-                
-                if (soilImages[soilType]) {
-                    previewImage.src = soilImages[soilType];
-                    previewImage.alt = soilType;
-                    previewImage.style.display = 'block';
-                    
-                    previewInfo.textContent = soilDescriptions[soilType] || soilType;
-                    previewInfo.style.display = 'block';
-                }
+                // Dispatch change event to update preview using the change listener
+                const event = new Event('change');
+                soilSelect.dispatchEvent(event);
             } else {
                 // Remove green border if soil type was not updated
                 soilSelect.classList.remove('field-filled');

@@ -1,0 +1,36 @@
+# Project File Structure and Data Information
+
+## 1. File and Folder Descriptions
+* **app.py**: The main entry point for the Flask web application.
+* **README.md**: Documentation detailing the system architecture, setup, and features.
+* **agricultural_models.pkl**: Pre-trained machine learning model weights for the seed sowing predictor.
+* **ml/disease_classifier.py**: Uses a pre-trained MobileNetV2 model to classify plant leaf diseases from images.
+* **ml/growth_model.py**: Generates a synthetic dataset and trains a Random Forest Regressor to predict plant growth and health.
+* **ml/seed_model.py**: Loads a pre-trained Random Forest model to recommend seed size, sowing depth, and spacing.
+* **ml/plant_growth_model.pkl**: The saved weights of the trained Random Forest growth model.
+* **controllers/**: Contains the logic for handling user requests and coordinating data between views and models.
+* **routes/**: Defines the API endpoints and web routing blueprints for the Flask application.
+* **services/**: Contains backend logic like the recommendation engine and PDF report generation.
+* **database/**: Contains the database configuration and initialization scripts.
+* **models/**: Contains the database schemas and data models (e.g., Users, Plants, Sensor Readings).
+* **static/**: Stores static assets, including CSS, JS, UI images, and user-uploaded leaf images.
+* **templates/**: Contains the HTML templates used for rendering the web interface.
+
+## 2. Available Data
+* **Leaf Images**: We have various user-uploaded plant leaf images used for disease classification (e.g., tomato early blight, potato late blight).
+* **Soil Type Images**: Reference images showing different types of soils (e.g., sandy, black cotton, red soil).
+
+## 3. Where the Data is Present
+* The **leaf images** are stored in the `static/uploads/` directory.
+* The **soil type images** are stored in the `static/images/soil_types/img/` directory.
+
+## 4. Model Training Data Information
+* **MobileNetV2 (Disease Classifier)**: 
+  - *Model used*: `linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification` (loaded via Hugging Face).
+  - *Training data*: It was trained externally on large agricultural image datasets (like the PlantVillage dataset) containing images of healthy and diseased plant leaves across various crop species.
+* **Random Forest (Growth Predictor)**: 
+  - *Model used*: Scikit-Learn `RandomForestRegressor`.
+  - *Training data*: It is trained dynamically on a **synthetic dataset of 2,000 samples** generated directly inside the `ml/growth_model.py` script. The synthetic data models crop growth dynamics based on parameters like age, temperature, humidity, moisture, NPK values, and soil pH.
+* **Random Forest (Seed Sowing Predictor)**:
+  - *Model used*: Pre-trained Random Forest model loaded from `agricultural_models.pkl`.
+  - *Training data*: It was trained externally on agricultural tabular data containing features like Crop Name, Region, Season, Soil Type, Temperature, and Moisture.

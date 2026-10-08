@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Intelligent Plant Growth Monitoring Framework</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1e3d2f 0%, #11221a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            max-width: 420px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .login-logo {
+            color: #27ae60;
+            margin-bottom: 10px;
+        }
+        .login-card h2 {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+        .login-card p {
+            color: #7f8c8d;
+            font-size: 13px;
+            margin-bottom: 30px;
+        }
+        .form-control {
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 14px;
+            border: 1px solid #dee2e6;
+        }
+        .form-control:focus {
+            border-color: #2ecc71;
+            box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #219653 0%, #27ae60 100%);
+        }
+        .auth-footer {
+            margin-top: 25px;
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        .auth-footer a {
+            color: #27ae60;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-logo">
+            <i class="fa-solid fa-leaf-maple fa-3x"></i>
+        </div>
+        <h2>Precision Crop AI</h2>
+        <p>Intelligent Plant Growth & Monitoring Framework</p>
+
+        <!-- Flash alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} py-2 px-3 text-start mb-3" style="font-size: 13px;" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('auth.login') }}" method="POST">
+            <div class="mb-3 text-start">
+                <label for="username" class="form-label fw-medium text-secondary" style="font-size: 12px;">USERNAME</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-user text-secondary"></i></span>
+                    <input type="text" class="form-control border-start-0" id="username" name="username" placeholder="Enter username" required>
+                </div>
+            </div>
+            <div class="mb-4 text-start">
+                <label for="password" class="form-label fw-medium text-secondary" style="font-size: 12px;">PASSWORD</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-lock text-secondary"></i></span>
+                    <input type="password" class="form-control border-start-0" id="password" name="password" placeholder="Enter password" required>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-4" style="font-size: 13px;">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                    <label class="form-check-label text-secondary" for="remember">Remember me</label>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Sign In</button>
+        </form>
+
+        <div class="auth-footer">
+            Don't have an account? <a href="{{ url_for('auth.register') }}">Create Account</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Register Crop - Precision Crop AI{% endblock %}
+{% block page_title %}Register New Crop Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card-glass text-start">
+            <div class="card-title-main mb-4"><i class="fa-solid fa-seedling me-2 text-success"></i>Enter Crop Specifications</div>
+            
+            <form action="{{ url_for('plant.add_plant') }}" method="POST">
+                <div class="row g-3">
+                    <div class="col-md-6 mb-3">
+                        <label for="name" class="form-label text-secondary fw-semibold" style="font-size: 12px;">CROP NAME / nickname</label>
+                        <input type="text" class="form-control rounded" id="name" name="name" placeholder="e.g. Field Alpha Cotton" required style="padding: 12px;">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="crop_type" class="form-label text-secondary fw-semibold" style="font-size: 12px;">SELECT CROP VARIETY</label>
+                        <select class="form-select" id="crop_type" name="crop_type" required style="padding: 12px;">
+                            <option value="Cotton" selected>Cotton</option>
+                            <option value="Wheat">Wheat</option>
+                            <option value="Rice">Rice</option>
+                            <option value="Sugarcane">Sugarcane</option>
+                            <option value="Tomato">Tomato</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="soil_type" class="form-label text-secondary fw-semibold" style="font-size: 12px;">SOIL CLASS TYPE</label>
+                        <select class="form-select" id="soil_type" name="soil_type" required style="padding: 12px;">
+                            <option value="Black" selected>Black Soil</option>
+                            <option value="Red">Red Soil</option>
+                            <option value="Laterite">Laterite Soil</option>
+                            <option value="Loamy">Loamy Soil</option>
+                            <option value="Alluvial">Alluvial Soil</option>
+                            <option value="Sandy">Sandy Soil</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="height_cm" class="form-label text-secondary fw-semibold" style="font-size: 12px;">INITIAL SEEDLING HEIGHT (cm)</label>
+                        <input type="number" step="0.1" class="form-control" id="height_cm" name="height_cm" value="1.0" min="0.1" required style="padding: 12px;">
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="sowing_date" class="form-label text-secondary fw-semibold" style="font-size: 12px;">SOWING / GERMINATION DATE</label>
+                        <input type="date" class="form-control" id="sowing_date" name="sowing_date" required style="padding: 12px;">
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-3 mt-3">
+                    <button type="submit" class="btn btn-success rounded-pill px-5 py-2 fw-semibold" style="font-size: 14px;">Register Profile</button>
+                    <a href="{{ url_for('plant.list_plants') }}" class="btn btn-light rounded-pill px-4 py-2" style="font-size: 14px; font-weight: 500;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Set default sowing date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('sowing_date').value = today;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Plant Registry - Precision Crop AI{% endblock %}
+{% block page_title %}Plant Registry & Crops List{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <p class="text-secondary mb-0" style="font-size: 14px;">Manage your active crops, inspect health timelines, and predict growth variables.</p>
+    </div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('plant.add_plant') }}" class="btn btn-success rounded-pill px-4" style="font-size: 13px; font-weight: 600;">
+            <i class="fa-solid fa-plus me-2"></i>Register New Crop
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {% if plants %}
+        {% for plant in plants %}
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card-glass">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-1" style="font-size: 17px;">{{ plant.name }}</h4>
+                        <div class="text-muted" style="font-size: 12px; font-weight: 500;">Type: {{ plant.crop_type }}</div>
+                    </div>
+                    <span class="badge-status {% if plant.status == 'Healthy' %}badge-healthy{% else %}badge-diseased{% endif %}">
+                        {{ plant.status }}
+                    </span>
+                </div>
+                
+                <div class="d-flex flex-column gap-2 mb-4" style="font-size: 13px;">
+                    <div class="d-flex justify-content-between border-bottom border-light pb-2">
+                        <span class="text-secondary">Sowing Age:</span>
+                        <span class="fw-semibold">{{ plant.current_age }} days</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom border-light pb-2">
+                        <span class="text-secondary">Soil Class:</span>
+                        <span class="fw-semibold">{{ plant.soil_type }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-secondary">Current Height:</span>
+                        <span class="fw-semibold text-success">{{ plant.height_cm }} cm</span>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('plant.plant_detail', plant_id=plant.id) }}" class="btn btn-success btn-sm flex-1 rounded-pill py-2" style="font-size: 12px; font-weight: 600;">
+                        <i class="fa-solid fa-gauge me-2"></i>Inspect Analytics
+                    </a>
+                    <form action="{{ url_for('plant.delete_plant', plant_id=plant.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this crop profile?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-circle p-2" style="height: 34px; width: 34px; display: flex; align-items: center; justify-content: center;" title="Delete Profile">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12 text-center py-5 text-muted">
+            <i class="fa-solid fa-seedling fa-4x mb-3 text-secondary"></i>
+            <h3>No Active Crops</h3>
+            <p class="mb-4" style="font-size: 14px;">Get started by registering your first field crop profile.</p>
+            <a href="{{ url_for('plant.add_plant') }}" class="btn btn-success rounded-pill px-5 py-2">Register First Crop</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

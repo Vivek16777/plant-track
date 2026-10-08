@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Health Monitoring - LSTM Block Diagram</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 30px;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            color: #111;
+        }
+
+        .title-underline {
+            width: 280px;
+            height: 4px;
+            background: linear-gradient(90deg, #6C63FF, #00C9DB);
+            border-radius: 2px;
+            margin-bottom: 50px;
+        }
+
+        /* ── Main pipeline row ── */
+        .pipeline {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            justify-content: center;
+        }
+
+        /* ── Arrow ── */
+        .arrow {
+            display: flex;
+            align-items: center;
+            padding: 0 6px;
+            flex-shrink: 0;
+        }
+
+        .arrow svg {
+            width: 40px;
+            height: 24px;
+        }
+
+        /* ── Block ── */
+        .block {
+            border: 2.5px solid;
+            border-radius: 14px;
+            padding: 18px 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-width: 170px;
+            max-width: 210px;
+        }
+
+        .block-title {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+        }
+
+        .block-subtitle {
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #666;
+            margin-bottom: 14px;
+        }
+
+        .block-content {
+            font-size: 0.7rem;
+            line-height: 1.7;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .block-content .item {
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .block-content .item:last-child {
+            border-bottom: none;
+        }
+
+        .highlight-text {
+            font-weight: 700;
+            background: rgba(0,0,0,0.07);
+            padding: 1px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        /* ── Color themes ── */
+        .block-input {
+            border-color: #4caf50;
+            background: #f1f8e9;
+        }
+        .block-input .block-title { color: #2e7d32; }
+        .block-input .block-content { color: #33691e; }
+
+        .block-lstm {
+            border-color: #7e57c2;
+            background: #f3e5f5;
+        }
+        .block-lstm .block-title { color: #4a148c; }
+        .block-lstm .block-content { color: #4a148c; }
+
+        .block-fc {
+            border-color: #ffa726;
+            background: #fff3e0;
+        }
+        .block-fc .block-title { color: #e65100; }
+        .block-fc .block-content { color: #bf360c; }
+
+        .block-output {
+            border-color: #66bb6a;
+            background: #e8f5e9;
+        }
+        .block-output .block-title { color: #2e7d32; }
+        .block-output .block-content { color: #1b5e20; }
+
+        /* ── Bottom legend ── */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px 32px;
+            margin-top: 44px;
+            justify-content: center;
+            max-width: 1100px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .legend-dot.green { background: #4caf50; }
+        .legend-dot.purple { background: #7e57c2; }
+        .legend-dot.orange { background: #ffa726; }
+        .legend-dot.green2 { background: #66bb6a; }
+
+        .legend-label {
+            font-size: 0.68rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .legend-label strong {
+            color: #222;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Plant Health Monitoring LSTM Classification Process</h1>
+    <div class="title-underline"></div>
+
+    <div class="pipeline">
+
+        <!-- Input -->
+        <div class="block block-input">
+            <div class="block-title">Input Time-Series Data</div>
+            <div class="block-subtitle">(Sequence of Leaf Images & Sensor Data)</div>
+            <div class="block-content">
+                <div class="item">Time Steps (e.g., Days): T₀, T₁, T₂</div>
+                <div class="item">Temperature Readings</div>
+                <div class="item">Moisture Levels</div>
+                <div class="item">Light Intensity</div>
+                <div class="item">Leaf Images at each step</div>
+                <div class="item highlight-text">Inputs: X_T₀, X_T₁, X_T₂</div>
+            </div>
+        </div>
+
+        <div class="arrow">
+            <svg viewBox="0 0 40 24"><polygon points="0,8 28,8 28,2 40,12 28,22 28,16 0,16" fill="#7e57c2"/></svg>
+        </div>
+
+        <!-- LSTM Network -->
+        <div class="block block-lstm" style="max-width: 240px; min-width: 220px;">
+            <div class="block-title">2. Recurrent LSTM Network</div>
+            <div class="block-subtitle">(Sequential Processing)</div>
+            <div class="block-content">
+                <div class="item"><strong>Forget Gate</strong> — Remove old info</div>
+                <div class="item"><strong>Input Gate</strong> — Add new info</div>
+                <div class="item"><strong>Cell State</strong> — Long-term memory</div>
+                <div class="item"><strong>Hidden State</strong> — Short-term memory</div>
+                <div class="item"><strong>Output Gate</strong> — Update hidden state</div>
+                <div class="item">Gates regulate information flow (forget, update, output)</div>
+                <div class="item">Cell state preserves context over time</div>
+                <div class="item highlight-text">Outputs: Final Hidden State h_T</div>
+            </div>
+        </div>
+
+        <div class="arrow">
+            <svg viewBox="0 0 40 24"><polygon points="0,8 28,8 28,2 40,12 28,22 28,16 0,16" fill="#ffa726"/></svg>
+        </div>
+
+        <!-- Fully Connected -->
+        <div class="block block-fc">
+            <div class="block-title">3. Fully Connected Layers</div>
+            <div class="block-subtitle">(Classification)</div>
+            <div class="block-content">
+                <div class="item">Flatten Layer</div>
+                <div class="item">Dense Connections</div>
+                <div class="item">Computes High-Level Sequence Combinations</div>
+                <div class="item">Reduces & Feature Sequence</div>
+                <div class="item">Retains Important Features</div>
+                <div class="item highlight-text">Learns Class Patterns</div>
+            </div>
+        </div>
+
+        <div class="arrow">
+            <svg viewBox="0 0 40 24"><polygon points="0,8 28,8 28,2 40,12 28,22 28,16 0,16" fill="#66bb6a"/></svg>
+        </div>
+
+        <!-- Output -->
+        <div class="block block-output">
+            <div class="block-title">4. Output Layer</div>
+            <div class="block-subtitle">(Softmax)</div>
+            <div class="block-content">
+                <div class="item">Healthy Leaf — 96%</div>
+                <div class="item">Water-Stressed</div>
+                <div class="item">Disease (Target Spot)</div>
+                <div class="item">Fungal Infection</div>
+                <div class="item highlight-text">Classification Result (Status)</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot green"></div>
+            <div class="legend-label"><strong>Input:</strong> Time-series leaf images & sensor data</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot purple"></div>
+            <div class="legend-label"><strong>LSTM:</strong> Gates regulate info flow, cell state preserves context</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot orange"></div>
+            <div class="legend-label"><strong>FC Layers:</strong> High-level sequence classification</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot green2"></div>
+            <div class="legend-label"><strong>Output:</strong> Softmax probability per class</div>
+        </div>
+    </div>
+
+</body>
+</html>

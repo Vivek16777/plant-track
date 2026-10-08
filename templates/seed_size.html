@@ -1,0 +1,277 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Sowing & Planting Guide - Precision Crop AI{% endblock %}
+{% block page_title %}Sowing Guide & Seed Sizing{% endblock %}
+
+{% block styles %}
+<style>
+.range-val-lbl {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Form Card Column -->
+    <div class="col-lg-6">
+        <div class="card-glass text-start">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="card-title-main mb-0"><i class="fa-solid fa-calculator me-2 text-success"></i>Seed Sowing Calculator</div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-success rounded-pill px-3" id="btn-fetch-weather" style="font-size: 11px; font-weight: 600;">
+                        <i class="fa-solid fa-cloud-sun me-1"></i>Fetch Weather
+                    </button>
+                    <button class="btn btn-sm btn-outline-success rounded-pill px-3" id="btn-fetch-sensor" style="font-size: 11px; font-weight: 600;">
+                        <i class="fa-solid fa-microchip me-1"></i>Fetch Sensor
+                    </button>
+                </div>
+            </div>
+            
+            <form id="sowing-form">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="crop_name" class="form-label text-secondary fw-semibold" style="font-size: 12px;">CROP TYPE</label>
+                        <select class="form-select" id="crop_name" name="crop_name" required>
+                            {% for c in crops %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="region" class="form-label text-secondary fw-semibold" style="font-size: 12px;">GEOGRAPHIC REGION</label>
+                        <select class="form-select" id="region" name="region" required>
+                            {% for r in regions %}
+                            <option value="{{ r }}">{{ r }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="season" class="form-label text-secondary fw-semibold" style="font-size: 12px;">CURRENT SEASON</label>
+                        <select class="form-select" id="season" name="season" required>
+                            {% for s in seasons %}
+                            <option value="{{ s }}">{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="soil_type" class="form-label text-secondary fw-semibold" style="font-size: 12px;">SOIL CLASS</label>
+                        <select class="form-select" id="soil_type" name="soil_type" required>
+                            {% for st in soil_types %}
+                            <option value="{{ st }}">{{ st }} Soil</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Sliders -->
+                    <div class="col-12 mb-3 mt-2">
+                        <div class="d-flex justify-content-between mb-1">
+                            <label for="temperature" class="form-label text-secondary fw-semibold" style="font-size: 12px;">TEMPERATURE (°C)</label>
+                            <span class="range-val-lbl" id="lbl-temp">25°C</span>
+                        </div>
+                        <input type="range" class="form-range" id="temperature" name="temperature" min="5" max="45" value="25">
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <label for="moisture" class="form-label text-secondary fw-semibold" style="font-size: 12px;">SOIL MOISTURE (%)</label>
+                            <span class="range-val-lbl" id="lbl-moist">50%</span>
+                        </div>
+                        <input type="range" class="form-range" id="moisture" name="moisture" min="0" max="100" value="50">
+                    </div>
+                    
+                    <div class="col-12 mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <label for="soil_ph" class="form-label text-secondary fw-semibold" style="font-size: 12px;">SOIL pH LEVEL</label>
+                            <span class="range-val-lbl" id="lbl-ph">6.5</span>
+                        </div>
+                        <input type="range" class="form-range" id="soil_ph" name="soil_ph" min="3.5" max="9.5" step="0.1" value="6.5">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success rounded-pill w-100 py-3 fw-semibold" style="font-size: 14px;">
+                    <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Compute Sowing Guide
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Results Card Column -->
+    <div class="col-lg-6">
+        <div class="card-glass text-start" id="results-card" style="display: none; height: calc(100% - 24px);">
+            <div class="card-title-main"><i class="fa-solid fa-list-check me-2 text-success"></i>Calculated Sowing Recipe</div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-4 text-center border-end border-light">
+                    <div class="text-muted" style="font-size: 11px;">SEED SIZE GRADE</div>
+                    <h4 class="fw-bold mt-1 text-success" id="res-seed-size">--</h4>
+                </div>
+                <div class="col-md-4 text-center border-end border-light">
+                    <div class="text-muted" style="font-size: 11px;">SOWING DEPTH</div>
+                    <h4 class="fw-bold mt-1 text-success" id="res-depth">-- cm</h4>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="text-muted" style="font-size: 11px;">PLANT SPACING</div>
+                    <h4 class="fw-bold mt-1 text-success" id="res-spacing">-- cm</h4>
+                </div>
+            </div>
+            
+            <div class="mb-3 pb-3 border-bottom border-light" style="font-size: 13px;">
+                <div class="fw-semibold mb-1 text-secondary">SOIL SUITABILITY & PROFILE</div>
+                <div id="res-soil-desc" class="text-primary fw-medium"></div>
+            </div>
+            
+            <div class="mb-3 pb-3 border-bottom border-light" style="font-size: 13px;">
+                <div class="fw-semibold mb-1 text-secondary">COMPATIBLE ROTATION CROPS</div>
+                <div id="res-soil-crops" class="text-primary fw-medium"></div>
+            </div>
+            
+            <div style="font-size: 13px; line-height: 1.6;">
+                <div class="fw-semibold mb-1 text-secondary">PRACTICAL SOWING TIP</div>
+                <p id="res-growing-tip" class="text-muted mb-0"></p>
+            </div>
+        </div>
+        
+        <!-- Placeholder Card -->
+        <div class="card-glass text-center d-flex flex-column align-items-center justify-content-center py-5" id="placeholder-card" style="height: calc(100% - 24px);">
+            <i class="fa-solid fa-calculator fa-4x mb-3 text-secondary"></i>
+            <h4>Awaiting Input Parameters</h4>
+            <p class="text-muted" style="font-size: 13px; max-width: 320px;">Adjust sliders and select fields in the Sowing Calculator to generate agricultural planting parameters.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Slider labels dynamic sync
+    const tempInput = document.getElementById('temperature');
+    const tempLbl = document.getElementById('lbl-temp');
+    tempInput.addEventListener('input', () => tempLbl.textContent = `${tempInput.value}°C`);
+    
+    const moistInput = document.getElementById('moisture');
+    const moistLbl = document.getElementById('lbl-moist');
+    moistInput.addEventListener('input', () => moistLbl.textContent = `${moistInput.value}%`);
+    
+    const phInput = document.getElementById('soil_ph');
+    const phLbl = document.getElementById('lbl-ph');
+    phInput.addEventListener('input', () => phLbl.textContent = phInput.value);
+
+    // Fetch Weather Logic
+    const btnWeather = document.getElementById('btn-fetch-weather');
+    btnWeather.addEventListener('click', () => {
+        btnWeather.disabled = true;
+        btnWeather.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>';
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                fetch(`/api/weather-proxy?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        tempInput.value = Math.round(res.temperature);
+                        tempLbl.textContent = `${tempInput.value}°C`;
+                        
+                        // Select season and region based on logic
+                        if (res.recommendations) {
+                            console.log('Farming recommendations:', res.recommendations);
+                        }
+                        
+                        btnWeather.disabled = false;
+                        btnWeather.innerHTML = '<i class="fa-solid fa-cloud-sun me-1"></i>Fetch Weather';
+                    } else {
+                        alert('Weather fetch failed: ' + res.error);
+                        btnWeather.disabled = false;
+                        btnWeather.innerHTML = '<i class="fa-solid fa-cloud-sun me-1"></i>Fetch Weather';
+                    }
+                })
+                .catch(err => {
+                    alert('Error connecting weather service: ' + err);
+                    btnWeather.disabled = false;
+                    btnWeather.innerHTML = '<i class="fa-solid fa-cloud-sun me-1"></i>Fetch Weather';
+                });
+            }, err => {
+                alert('Location access denied. Please set coordinates manually.');
+                btnWeather.disabled = false;
+                btnWeather.innerHTML = '<i class="fa-solid fa-cloud-sun me-1"></i>Fetch Weather';
+            });
+        }
+    });
+
+    // Fetch Sensor Logic
+    const btnSensor = document.getElementById('btn-fetch-sensor');
+    btnSensor.addEventListener('click', () => {
+        btnSensor.disabled = true;
+        btnSensor.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>';
+        
+        // Simulates pulling from active telemetry endpoint
+        fetch('/sensorData/plant_data.json')
+        .then(res => res.json())
+        .then(res => {
+            if (res && res.length > 0) {
+                const latest = res[res.length - 1];
+                tempInput.value = Math.round(latest.temperature || 25);
+                tempLbl.textContent = `${tempInput.value}°C`;
+                
+                moistInput.value = Math.round(latest.soil_moisture || 50);
+                moistLbl.textContent = `${moistInput.value}%`;
+                
+                btnSensor.disabled = false;
+                btnSensor.innerHTML = '<i class="fa-solid fa-microchip me-1"></i>Fetch Sensor';
+            }
+        })
+        .catch(err => {
+            alert('Sensor fetch failed: ' + err);
+            btnSensor.disabled = false;
+            btnSensor.innerHTML = '<i class="fa-solid fa-microchip me-1"></i>Fetch Sensor';
+        });
+    });
+
+    // Form Submit
+    const form = document.getElementById('sowing-form');
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        
+        fetch('/seed_size/predict', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.error) {
+                alert('Error computing parameters: ' + res.error);
+                return;
+            }
+            
+            // Populate results
+            document.getElementById('res-seed-size').textContent = res.seed_size;
+            document.getElementById('res-depth').textContent = `${res.sowing_depth} cm`;
+            document.getElementById('res-spacing').textContent = `${res.spacing} cm`;
+            
+            document.getElementById('res-soil-desc').textContent = res.soil_description;
+            document.getElementById('res-soil-crops').textContent = res.recommended_crops.join(', ');
+            
+            // Build simple advice text
+            const cropName = document.getElementById('crop_name').value;
+            const soilType = document.getElementById('soil_type').value;
+            document.getElementById('res-growing-tip').textContent = `To plant ${cropName} in ${soilType} soil, sow the ${res.seed_size} seeds at a depth of ${res.sowing_depth} cm, spaced ${res.spacing} cm apart. This setup helps avoid seed washout, maintains optimal thermal levels, and provides sufficient soil volume for root growth.`;
+            
+            // Hide placeholder & show results
+            document.getElementById('placeholder-card').style.display = 'none';
+            document.getElementById('results-card').style.display = 'block';
+        })
+        .catch(err => {
+            alert('Connection error submitting form: ' + err);
+        });
+    });
+});
+</script>
+{% endblock %}

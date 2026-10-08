@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Health Monitoring – CNN Block Diagram</title>
+    <meta name="description" content="Interactive block diagram of the Plant Health Monitoring CNN Classification Process showing convolution, pooling, fully connected layers, and output.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --border-glow: rgba(99, 102, 241, 0.3);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-indigo: #818cf8;
+            --accent-cyan: #22d3ee;
+            --accent-emerald: #34d399;
+            --accent-amber: #fbbf24;
+            --accent-rose: #fb7185;
+            --accent-violet: #a78bfa;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%);
+            --gradient-3: linear-gradient(135deg, #34d399 0%, #22d3ee 100%);
+            --gradient-4: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+            --gradient-5: linear-gradient(135deg, #fb7185 0%, #a78bfa 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(34, 211, 238, 0.05) 0%, transparent 50%);
+            z-index: 0;
+        }
+
+        .bg-grid::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 40px 30px 60px;
+        }
+
+        /* ───── Header ───── */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 18px;
+            border-radius: 100px;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent-indigo);
+            margin-bottom: 18px;
+        }
+
+        .header-badge .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.4); }
+        }
+
+        .header h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #f1f5f9 0%, #818cf8 50%, #22d3ee 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+            margin-bottom: 12px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 640px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* ───── Pipeline ───── */
+        .pipeline {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            position: relative;
+        }
+
+        /* Arrow connectors */
+        .arrow-connector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 60px;
+            position: relative;
+        }
+
+        .arrow-connector svg {
+            width: 50px;
+            height: 30px;
+            overflow: visible;
+        }
+
+        .arrow-connector .arrow-line {
+            stroke: var(--accent-indigo);
+            stroke-width: 2;
+            stroke-dasharray: 6 4;
+            animation: dash-flow 1s linear infinite;
+        }
+
+        .arrow-connector .arrow-head {
+            fill: var(--accent-indigo);
+        }
+
+        @keyframes dash-flow {
+            to { stroke-dashoffset: -10; }
+        }
+
+        /* ───── Stage Card ───── */
+        .stage {
+            flex: 1;
+            min-width: 0;
+            border-radius: 18px;
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+            position: relative;
+        }
+
+        .stage:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .stage::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 18px 18px 0 0;
+        }
+
+        .stage:nth-child(1)::before { background: var(--gradient-1); }
+        .stage:nth-child(3)::before { background: var(--gradient-2); }
+        .stage:nth-child(5)::before { background: var(--gradient-3); }
+        .stage:nth-child(7)::before { background: var(--gradient-4); }
+        .stage:nth-child(9)::before { background: var(--gradient-5); }
+
+        .stage-header {
+            padding: 22px 22px 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .stage-number {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            color: #fff;
+        }
+
+        .stage:nth-child(1) .stage-number { background: var(--gradient-1); }
+        .stage:nth-child(3) .stage-number { background: var(--gradient-2); }
+        .stage:nth-child(5) .stage-number { background: var(--gradient-3); }
+        .stage:nth-child(7) .stage-number { background: var(--gradient-4); }
+        .stage:nth-child(9) .stage-number { background: var(--gradient-5); }
+
+        .stage-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .stage-subtitle {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .stage-body {
+            padding: 18px 22px 22px;
+        }
+
+        /* Visual block inside each stage */
+        .visual-block {
+            border-radius: 12px;
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ──── INPUT IMAGE visual ──── */
+        .input-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .leaf-icon-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #166534, #15803d, #22c55e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: float 4s ease-in-out infinite;
+            box-shadow: 0 8px 30px rgba(34, 197, 94, 0.25);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .leaf-icon-container svg {
+            width: 44px;
+            height: 44px;
+            fill: #bbf7d0;
+        }
+
+        .dim-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--accent-cyan);
+            background: rgba(34, 211, 238, 0.08);
+            padding: 3px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(34, 211, 238, 0.15);
+        }
+
+        /* ──── CONVOLUTION visual ──── */
+        .conv-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .kernel-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            width: 72px;
+        }
+
+        .kernel-cell {
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            animation: kernel-pulse 3s ease-in-out infinite;
+        }
+
+        .kernel-cell:nth-child(odd) {
+            background: rgba(129, 140, 248, 0.5);
+            border: 1px solid rgba(129, 140, 248, 0.6);
+        }
+
+        .kernel-cell:nth-child(even) {
+            background: rgba(167, 139, 250, 0.4);
+            border: 1px solid rgba(167, 139, 250, 0.5);
+        }
+
+        @keyframes kernel-pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .feature-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .feature-tag {
+            font-size: 0.62rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            background: rgba(129, 140, 248, 0.1);
+            border: 1px solid rgba(129, 140, 248, 0.2);
+            color: var(--accent-indigo);
+        }
+
+        /* ──── POOLING visual ──── */
+        .pool-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pool-grid-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .pool-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+        }
+
+        .pool-cell {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .pool-cell.highlight {
+            background: rgba(34, 211, 238, 0.6);
+            border: 1px solid rgba(34, 211, 238, 0.8);
+        }
+
+        .pool-cell.dim {
+            background: rgba(34, 211, 238, 0.15);
+            border: 1px solid rgba(34, 211, 238, 0.2);
+        }
+
+        .pool-reduced {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2px;
+        }
+
+        .pool-reduced .pool-cell {
+            width: 22px;
+            height: 22px;
+            background: rgba(34, 211, 238, 0.5);
+            border: 1px solid rgba(34, 211, 238, 0.7);
+            font-size: 0.55rem;
+        }
+
+        .pool-arrow-icon {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+        }
+
+        /* ──── FULLY CONNECTED visual ──── */
+        .fc-visual {
+            position: relative;
+            width: 100%;
+            height: 130px;
+        }
+
+        .fc-visual canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ──── OUTPUT visual ──── */
+        .output-visual {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .output-class {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 12px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .output-class:hover {
+            transform: translateX(4px);
+        }
+
+        .output-class .class-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .output-class .class-name {
+            font-size: 0.72rem;
+            font-weight: 600;
+            flex: 1;
+            white-space: nowrap;
+        }
+
+        .output-class .class-bar-track {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 100px;
+            overflow: hidden;
+            min-width: 40px;
+        }
+
+        .output-class .class-bar {
+            height: 100%;
+            border-radius: 100px;
+            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+            width: 0;
+        }
+
+        .output-class .class-pct {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        .output-class.healthy { background: rgba(34, 197, 94, 0.08); }
+        .output-class.healthy .class-dot { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); }
+        .output-class.healthy .class-bar { background: linear-gradient(90deg, #22c55e, #4ade80); }
+        .output-class.healthy .class-pct { color: #4ade80; }
+
+        .output-class.water { background: rgba(56, 189, 248, 0.08); }
+        .output-class.water .class-dot { background: #38bdf8; }
+        .output-class.water .class-bar { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+        .output-class.water .class-pct { color: #38bdf8; }
+
+        .output-class.disease { background: rgba(251, 113, 133, 0.08); }
+        .output-class.disease .class-dot { background: #fb7185; }
+        .output-class.disease .class-bar { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+        .output-class.disease .class-pct { color: #fb7185; }
+
+        .output-class.fungal { background: rgba(251, 191, 36, 0.08); }
+        .output-class.fungal .class-dot { background: #fbbf24; }
+        .output-class.fungal .class-bar { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .output-class.fungal .class-pct { color: #fbbf24; }
+
+        /* ──── Info chips ──── */
+        .info-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .info-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            line-height: 1.3;
+        }
+
+        .info-chip .chip-icon {
+            font-size: 0.8rem;
+        }
+
+        /* ──── Legend ──── */
+        .legend-section {
+            margin-top: 50px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .legend-card {
+            padding: 18px;
+            border-radius: 14px;
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .legend-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.4);
+        }
+
+        .legend-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .legend-card:nth-child(1) .legend-icon { background: rgba(129, 140, 248, 0.15); color: var(--accent-indigo); }
+        .legend-card:nth-child(2) .legend-icon { background: rgba(34, 211, 238, 0.15); color: var(--accent-cyan); }
+        .legend-card:nth-child(3) .legend-icon { background: rgba(52, 211, 153, 0.15); color: var(--accent-emerald); }
+        .legend-card:nth-child(4) .legend-icon { background: rgba(251, 191, 36, 0.15); color: var(--accent-amber); }
+        .legend-card:nth-child(5) .legend-icon { background: rgba(251, 113, 133, 0.15); color: var(--accent-rose); }
+
+        .legend-text h4 {
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .legend-text p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* ───── Responsive ───── */
+        @media (max-width: 1100px) {
+            .pipeline {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .arrow-connector {
+                width: 100%;
+                height: 40px;
+                transform: rotate(90deg);
+            }
+
+            .stage {
+                width: 100%;
+            }
+        }
+
+        /* Animate in */
+        .stage, .legend-card {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .stage:nth-child(1) { animation-delay: 0.1s; }
+        .stage:nth-child(3) { animation-delay: 0.25s; }
+        .stage:nth-child(5) { animation-delay: 0.4s; }
+        .stage:nth-child(7) { animation-delay: 0.55s; }
+        .stage:nth-child(9) { animation-delay: 0.7s; }
+
+        .legend-card:nth-child(1) { animation-delay: 0.85s; }
+        .legend-card:nth-child(2) { animation-delay: 0.95s; }
+        .legend-card:nth-child(3) { animation-delay: 1.05s; }
+        .legend-card:nth-child(4) { animation-delay: 1.15s; }
+        .legend-card:nth-child(5) { animation-delay: 1.25s; }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Softmax badge */
+        .softmax-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: rgba(167, 139, 250, 0.1);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--accent-violet);
+        }
+
+        .relu-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: var(--accent-emerald);
+        }
+
+        /* Flatten indicator */
+        .flatten-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: rgba(251, 191, 36, 0.08);
+            border: 1px dashed rgba(251, 191, 36, 0.3);
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--accent-amber);
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-badge">
+                <span class="dot"></span>
+                CNN Architecture
+            </div>
+            <h1>Plant Health Monitoring<br>CNN Classification Process</h1>
+            <p>End-to-end deep learning pipeline for detecting plant diseases through convolutional neural network analysis of leaf imagery.</p>
+        </header>
+
+        <!-- Pipeline -->
+        <div class="pipeline" id="pipeline">
+
+            <!-- ── Stage 0: INPUT ── -->
+            <div class="stage">
+                <div class="stage-header">
+                    <div class="stage-number">IN</div>
+                    <div>
+                        <div class="stage-title">Input Image</div>
+                        <div class="stage-subtitle">Raw Leaf Image</div>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <div class="visual-block">
+                        <div class="input-visual">
+                            <div class="leaf-icon-container">
+                                <svg viewBox="0 0 24 24"><path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg>
+                            </div>
+                            <span class="dim-label">64 × 64 × 3</span>
+                        </div>
+                    </div>
+                    <div class="info-chips">
+                        <span class="info-chip"><span class="chip-icon">📷</span> RGB Channels</span>
+                        <span class="info-chip"><span class="chip-icon">📐</span> Resized to 64px</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="arrow-connector">
+                <svg viewBox="0 0 50 30">
+                    <line class="arrow-line" x1="0" y1="15" x2="40" y2="15"/>
+                    <polygon class="arrow-head" points="38,9 50,15 38,21"/>
+                </svg>
+            </div>
+
+            <!-- ── Stage 1: CONVOLUTION ── -->
+            <div class="stage">
+                <div class="stage-header">
+                    <div class="stage-number">1</div>
+                    <div>
+                        <div class="stage-title">Convolution &amp; Activation</div>
+                        <div class="stage-subtitle">Feature Extraction</div>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <div class="visual-block">
+                        <div class="conv-visual">
+                            <div class="kernel-grid" title="3×3 Kernel/Filter">
+                                <div class="kernel-cell">-1</div>
+                                <div class="kernel-cell">0</div>
+                                <div class="kernel-cell">1</div>
+                                <div class="kernel-cell">-1</div>
+                                <div class="kernel-cell">0</div>
+                                <div class="kernel-cell">1</div>
+                                <div class="kernel-cell">-1</div>
+                                <div class="kernel-cell">0</div>
+                                <div class="kernel-cell">1</div>
+                            </div>
+                            <span class="dim-label">3 × 3 Kernel</span>
+                            <div class="feature-tags">
+                                <span class="feature-tag">Edge Detection</span>
+                                <span class="feature-tag">Texture Mapping</span>
+                                <span class="feature-tag">Vascular Patterns</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-chips">
+                        <span class="relu-badge">✓ ReLU Activation</span>
+                        <span class="info-chip"><span class="chip-icon">🔍</span> Learns edges, curves</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="arrow-connector">
+                <svg viewBox="0 0 50 30">
+                    <line class="arrow-line" x1="0" y1="15" x2="40" y2="15"/>
+                    <polygon class="arrow-head" points="38,9 50,15 38,21"/>
+                </svg>
+            </div>
+
+            <!-- ── Stage 2: POOLING ── -->
+            <div class="stage">
+                <div class="stage-header">
+                    <div class="stage-number">2</div>
+                    <div>
+                        <div class="stage-title">Pooling</div>
+                        <div class="stage-subtitle">Down-sampling</div>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <div class="visual-block">
+                        <div class="pool-visual">
+                            <div class="pool-grid-wrapper">
+                                <div class="pool-grid">
+                                    <div class="pool-cell highlight">7</div>
+                                    <div class="pool-cell dim">2</div>
+                                    <div class="pool-cell dim">5</div>
+                                    <div class="pool-cell dim">3</div>
+                                    <div class="pool-cell dim">1</div>
+                                    <div class="pool-cell dim">4</div>
+                                    <div class="pool-cell dim">6</div>
+                                    <div class="pool-cell highlight">8</div>
+                                    <div class="pool-cell dim">3</div>
+                                    <div class="pool-cell highlight">9</div>
+                                    <div class="pool-cell dim">2</div>
+                                    <div class="pool-cell dim">1</div>
+                                    <div class="pool-cell dim">4</div>
+                                    <div class="pool-cell dim">5</div>
+                                    <div class="pool-cell dim">1</div>
+                                    <div class="pool-cell highlight">6</div>
+                                </div>
+                                <span class="pool-arrow-icon">→</span>
+                                <div class="pool-reduced">
+                                    <div class="pool-cell">7</div>
+                                    <div class="pool-cell">8</div>
+                                    <div class="pool-cell">9</div>
+                                    <div class="pool-cell">6</div>
+                                </div>
+                            </div>
+                            <span class="dim-label">Max Pooling 2×2</span>
+                        </div>
+                    </div>
+                    <div class="info-chips">
+                        <span class="info-chip"><span class="chip-icon">📉</span> Reduces data size</span>
+                        <span class="info-chip"><span class="chip-icon">✨</span> Retains key features</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="arrow-connector">
+                <svg viewBox="0 0 50 30">
+                    <line class="arrow-line" x1="0" y1="15" x2="40" y2="15"/>
+                    <polygon class="arrow-head" points="38,9 50,15 38,21"/>
+                </svg>
+            </div>
+
+            <!-- ── Stage 3: FULLY CONNECTED ── -->
+            <div class="stage">
+                <div class="stage-header">
+                    <div class="stage-number">3</div>
+                    <div>
+                        <div class="stage-title">Fully Connected Layers</div>
+                        <div class="stage-subtitle">Classification</div>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <div class="flatten-indicator">
+                        <span>⬛→▬</span> Flatten to 1D vector
+                    </div>
+                    <div class="visual-block" style="min-height: 140px;">
+                        <div class="fc-visual">
+                            <canvas id="nn-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="info-chips">
+                        <span class="info-chip"><span class="chip-icon">🧠</span> High-level feature combinations</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="arrow-connector">
+                <svg viewBox="0 0 50 30">
+                    <line class="arrow-line" x1="0" y1="15" x2="40" y2="15"/>
+                    <polygon class="arrow-head" points="38,9 50,15 38,21"/>
+                </svg>
+            </div>
+
+            <!-- ── Stage 4: OUTPUT ── -->
+            <div class="stage">
+                <div class="stage-header">
+                    <div class="stage-number">4</div>
+                    <div>
+                        <div class="stage-title">Output Layer</div>
+                        <div class="stage-subtitle">Classification Result</div>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <div class="visual-block" style="min-height: auto; padding: 14px;">
+                        <div class="output-visual">
+                            <div class="output-class healthy">
+                                <span class="class-dot"></span>
+                                <span class="class-name">Healthy Leaf</span>
+                                <div class="class-bar-track"><div class="class-bar" data-width="96"></div></div>
+                                <span class="class-pct">96%</span>
+                            </div>
+                            <div class="output-class water">
+                                <span class="class-dot"></span>
+                                <span class="class-name">Water-Stressed</span>
+                                <div class="class-bar-track"><div class="class-bar" data-width="2"></div></div>
+                                <span class="class-pct">2%</span>
+                            </div>
+                            <div class="output-class disease">
+                                <span class="class-dot"></span>
+                                <span class="class-name">Disease (Target Spot)</span>
+                                <div class="class-bar-track"><div class="class-bar" data-width="1"></div></div>
+                                <span class="class-pct">1%</span>
+                            </div>
+                            <div class="output-class fungal">
+                                <span class="class-dot"></span>
+                                <span class="class-name">Fungal Infection</span>
+                                <div class="class-bar-track"><div class="class-bar" data-width="1"></div></div>
+                                <span class="class-pct">1%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="softmax-badge">
+                        <span>σ</span> Softmax Activation
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Legend -->
+        <div class="legend-section">
+            <div class="legend-card">
+                <div class="legend-icon">🔬</div>
+                <div class="legend-text">
+                    <h4>Convolution Filters</h4>
+                    <p>3×3 kernels slide over the input image, learning to detect specific features like edges, curves, and textures.</p>
+                </div>
+            </div>
+            <div class="legend-card">
+                <div class="legend-icon">⚡</div>
+                <div class="legend-text">
+                    <h4>ReLU Activation</h4>
+                    <p>Introduces non-linearity to the network, enabling it to learn complex patterns beyond linear transformations.</p>
+                </div>
+            </div>
+            <div class="legend-card">
+                <div class="legend-icon">📊</div>
+                <div class="legend-text">
+                    <h4>Max Pooling</h4>
+                    <p>Reduces spatial dimensions by taking maximum values, lowering computation while preserving dominant features.</p>
+                </div>
+            </div>
+            <div class="legend-card">
+                <div class="legend-icon">🧠</div>
+                <div class="legend-text">
+                    <h4>Fully Connected</h4>
+                    <p>Dense layers compute high-level feature combinations, mapping extracted patterns to classification decisions.</p>
+                </div>
+            </div>
+            <div class="legend-card">
+                <div class="legend-icon">🎯</div>
+                <div class="legend-text">
+                    <h4>Softmax Output</h4>
+                    <p>Converts raw scores to probability distribution across all classes, with the highest probability indicating the predicted class.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ──── Draw neural network on canvas ────
+        function drawNN() {
+            const canvas = document.getElementById('nn-canvas');
+            if (!canvas) return;
+
+            const container = canvas.parentElement;
+            const rect = container.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            const w = rect.width;
+            const h = rect.height;
+
+            const layers = [6, 8, 6, 4];
+            const layerX = layers.map((_, i) => 30 + (i / (layers.length - 1)) * (w - 60));
+
+            const nodePositions = [];
+
+            layers.forEach((count, li) => {
+                const positions = [];
+                const spacing = (h - 30) / (count + 1);
+                for (let ni = 0; ni < count; ni++) {
+                    positions.push({
+                        x: layerX[li],
+                        y: 15 + spacing * (ni + 1)
+                    });
+                }
+                nodePositions.push(positions);
+            });
+
+            // Draw connections
+            for (let li = 0; li < nodePositions.length - 1; li++) {
+                const fromLayer = nodePositions[li];
+                const toLayer = nodePositions[li + 1];
+                fromLayer.forEach(from => {
+                    toLayer.forEach(to => {
+                        const opacity = 0.06 + Math.random() * 0.1;
+                        ctx.beginPath();
+                        ctx.moveTo(from.x, from.y);
+                        ctx.lineTo(to.x, to.y);
+                        ctx.strokeStyle = `rgba(129, 140, 248, ${opacity})`;
+                        ctx.lineWidth = 0.7;
+                        ctx.stroke();
+                    });
+                });
+            }
+
+            // Draw nodes
+            const colors = [
+                'rgba(34, 211, 238, 0.9)',
+                'rgba(129, 140, 248, 0.9)',
+                'rgba(167, 139, 250, 0.9)',
+                'rgba(251, 113, 133, 0.9)'
+            ];
+
+            nodePositions.forEach((layer, li) => {
+                layer.forEach(node => {
+                    // Glow
+                    const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, 10);
+                    gradient.addColorStop(0, colors[li].replace('0.9', '0.3'));
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+
+                    // Node
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = colors[li];
+                    ctx.fill();
+                    ctx.strokeStyle = colors[li].replace('0.9', '0.5');
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+            });
+        }
+
+        // ──── Animate output bars ────
+        function animateBars() {
+            const bars = document.querySelectorAll('.class-bar');
+            bars.forEach(bar => {
+                const w = bar.getAttribute('data-width');
+                bar.style.width = w + '%';
+            });
+        }
+
+        // ──── Init ────
+        window.addEventListener('load', () => {
+            drawNN();
+            setTimeout(animateBars, 900);
+        });
+
+        window.addEventListener('resize', drawNN);
+    </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}IoT Monitoring Cockpit - Precision Crop AI{% endblock %}
+{% block page_title %}Live IoT Monitoring Cockpit{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <label for="plant-selector" class="form-label fw-semibold" style="font-size: 13px;">CHOOSE ACTIVE PLANT telemetry</label>
+        <select class="form-select border-success rounded-pill px-4" id="plant-selector" style="font-size: 14px; max-width: 320px;">
+            {% for plant in plants %}
+            <option value="{{ plant.id }}">{{ plant.name }} ({{ plant.crop_type }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <button id="btn-trigger-sim" class="btn btn-outline-success rounded-pill px-4" style="font-size: 13px; font-weight: 600;">
+            <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Trigger Simulation Cycle
+        </button>
+    </div>
+</div>
+
+<!-- Telemetry Gauge Grid -->
+<div class="row" id="gauges-wrapper">
+    <!-- Temperature Gauge -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card-glass text-center">
+            <div class="card-title-main">Temperature (°C)</div>
+            <div class="gauge-container">
+                <svg class="gauge-svg" viewBox="0 0 120 120" width="120" height="120">
+                    <circle class="gauge-track" cx="60" cy="60" r="50"></circle>
+                    <circle class="gauge-fill" id="gauge-temp-fill" cx="60" cy="60" r="50" style="stroke: #e67e22;"></circle>
+                </svg>
+                <div class="gauge-value" id="val-temp">--°C</div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary);" id="status-temp">Status: Ok</div>
+        </div>
+    </div>
+    
+    <!-- Humidity Gauge -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card-glass text-center">
+            <div class="card-title-main">Humidity (%)</div>
+            <div class="gauge-container">
+                <svg class="gauge-svg" viewBox="0 0 120 120" width="120" height="120">
+                    <circle class="gauge-track" cx="60" cy="60" r="50"></circle>
+                    <circle class="gauge-fill" id="gauge-hum-fill" cx="60" cy="60" r="50" style="stroke: #3498db;"></circle>
+                </svg>
+                <div class="gauge-value" id="val-hum">--%</div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary);" id="status-hum">Status: Ok</div>
+        </div>
+    </div>
+    
+    <!-- Soil Moisture Gauge -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card-glass text-center">
+            <div class="card-title-main">Soil Moisture (%)</div>
+            <div class="gauge-container">
+                <svg class="gauge-svg" viewBox="0 0 120 120" width="120" height="120">
+                    <circle class="gauge-track" cx="60" cy="60" r="50"></circle>
+                    <circle class="gauge-fill" id="gauge-moist-fill" cx="60" cy="60" r="50" style="stroke: #2ecc71;"></circle>
+                </svg>
+                <div class="gauge-value" id="val-moist">--%</div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary);" id="status-moist">Status: Ok</div>
+        </div>
+    </div>
+    
+    <!-- Tank Level Gauge -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card-glass text-center">
+            <div class="card-title-main">Water Tank Level (%)</div>
+            <div class="gauge-container">
+                <svg class="gauge-svg" viewBox="0 0 120 120" width="120" height="120">
+                    <circle class="gauge-track" cx="60" cy="60" r="50"></circle>
+                    <circle class="gauge-fill" id="gauge-tank-fill" cx="60" cy="60" r="50" style="stroke: #9b59b6;"></circle>
+                </svg>
+                <div class="gauge-value" id="val-tank">--%</div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary);" id="status-tank">Status: Ok</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Extra Telemetry Cards -->
+    <div class="col-lg-4">
+        <div class="card-glass">
+            <div class="card-title-main"><i class="fa-solid fa-solar-panel me-2 text-warning"></i>Auxiliary Telemetry Sensors</div>
+            
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-light">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-vial text-info fa-lg" style="width: 25px;"></i>
+                    <span style="font-size: 14px;">Soil pH:</span>
+                </div>
+                <span class="fw-semibold text-primary" id="val-ph">--</span>
+            </div>
+            
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-light">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-warning fa-lg" style="width: 25px;"></i>
+                    <span style="font-size: 14px;">Light Intensity:</span>
+                </div>
+                <span class="fw-semibold text-primary" id="val-light">-- Lux</span>
+            </div>
+            
+            <div class="d-flex align-items-center justify-content-between mb-1">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-cloud-rain text-primary fa-lg" style="width: 25px;"></i>
+                    <span style="font-size: 14px;">Rain Sensor:</span>
+                </div>
+                <span class="fw-semibold text-primary" id="val-rain">--</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Integration Webhook Guide Card -->
+    <div class="col-lg-8">
+        <div class="card-glass">
+            <div class="card-title-main"><i class="fa-solid fa-terminal me-2 text-success"></i>IoT ESP32 & Wokwi Webhook Integration</div>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+                You can push data from real microcontrollers (ESP32 / ESP8266) or simulated Wokwi boards directly to your local database using this endpoint:
+            </p>
+            <div class="bg-light p-3 rounded border border-light font-monospace text-start mb-3 text-break" style="font-size: 12px; color: #2c3e50;" id="webhook-endpoint-path">
+                POST http://127.0.0.1:8000/api/telemetry
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary);">
+                Send a JSON payload containing: <code>{"plant_id": <span class="current-plant-id-text">1</span>, "temperature": 26.5, "humidity": 62, "soil_moisture": 53.4, "soil_ph": 6.8}</code>. Make sure to map your active crop's plant ID correctly.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const selector = document.getElementById('plant-selector');
+    const btnSim = document.getElementById('btn-trigger-sim');
+    
+    // Plant Telemetry JSON Mapping passed from Python
+    const telemetryData = {
+        {% for pid, r in latest_readings.items() %}
+        "{{ pid }}": {
+            "id": "{{ r.plant_id }}",
+            "temperature": {{ r.temperature }},
+            "humidity": {{ r.humidity }},
+            "soil_moisture": {{ r.soil_moisture }},
+            "soil_ph": {{ r.soil_ph }},
+            "light_intensity": {{ r.light_intensity }},
+            "rain_level": {{ r.rain_level }},
+            "water_tank_level": {{ r.water_tank_level }}
+        },
+        {% endfor %}
+    };
+
+    function updateGauges(plantId) {
+        const data = telemetryData[plantId];
+        
+        // Update current plant ID in guide
+        document.querySelectorAll('.current-plant-id-text').forEach(el => {
+            el.textContent = plantId || '1';
+        });
+        
+        if (!data) {
+            resetGauges();
+            return;
+        }
+
+        // Set Gauge Values
+        document.getElementById('val-temp').textContent = `${data.temperature.toFixed(1)}°C`;
+        document.getElementById('val-hum').textContent = `${data.humidity.toFixed(1)}%`;
+        document.getElementById('val-moist').textContent = `${data.soil_moisture.toFixed(1)}%`;
+        document.getElementById('val-tank').textContent = `${data.water_tank_level.toFixed(1)}%`;
+        
+        document.getElementById('val-ph').textContent = data.soil_ph.toFixed(1);
+        document.getElementById('val-light').textContent = `${Math.round(data.light_intensity)} Lux`;
+        document.getElementById('val-rain').textContent = data.rain_level > 20 ? 'Raining' : 'Dry';
+
+        // Animated Gauge Fills
+        setGaugeOffset('gauge-temp-fill', data.temperature, 50); // limit 50°C
+        setGaugeOffset('gauge-hum-fill', data.humidity, 100);
+        setGaugeOffset('gauge-moist-fill', data.soil_moisture, 100);
+        setGaugeOffset('gauge-tank-fill', data.water_tank_level, 100);
+        
+        // Status updates
+        document.getElementById('status-moist').textContent = data.soil_moisture < 35 ? 'Status: Critically Dry' : 'Status: Optimal';
+        document.getElementById('status-moist').style.color = data.soil_moisture < 35 ? 'var(--danger-color)' : 'var(--text-secondary)';
+        
+        document.getElementById('status-tank').textContent = data.water_tank_level < 20 ? 'Status: Refill Alert' : 'Status: Good';
+        document.getElementById('status-tank').style.color = data.water_tank_level < 20 ? 'var(--danger-color)' : 'var(--text-secondary)';
+    }
+
+    function setGaugeOffset(elementId, value, maxVal) {
+        const circle = document.getElementById(elementId);
+        if (!circle) return;
+        const radius = 50;
+        const circumference = 2 * Math.PI * radius; // 314.159
+        
+        // Calculate offset mapping
+        const percentage = Math.min(100, Math.max(0, (value / maxVal) * 100));
+        const offset = circumference - (percentage / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+    }
+
+    function resetGauges() {
+        document.getElementById('val-temp').textContent = '--°C';
+        document.getElementById('val-hum').textContent = '--%';
+        document.getElementById('val-moist').textContent = '--%';
+        document.getElementById('val-tank').textContent = '--%';
+        document.getElementById('val-ph').textContent = '--';
+        document.getElementById('val-light').textContent = '-- Lux';
+        document.getElementById('val-rain').textContent = '--';
+        
+        ['gauge-temp-fill', 'gauge-hum-fill', 'gauge-moist-fill', 'gauge-tank-fill'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.strokeDashoffset = 314;
+        });
+    }
+
+    // Set webhook host
+    document.getElementById('webhook-endpoint-path').textContent = `POST http://${window.location.host}/api/telemetry`;
+
+    // Dropdown change listener
+    selector.addEventListener('change', (e) => {
+        updateGauges(e.target.value);
+    });
+
+    // Run trigger simulation
+    btnSim.addEventListener('click', () => {
+        btnSim.disabled = true;
+        btnSim.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i>Running Cycle...`;
+        
+        fetch('/api/telemetry/simulate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.status === 'success') {
+                window.location.reload();
+            } else {
+                alert('Simulation failed: ' + res.message);
+                btnSim.disabled = false;
+                btnSim.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles me-2"></i>Trigger Simulation Cycle`;
+            }
+        })
+        .catch(err => {
+            alert('Error running simulation: ' + err);
+            btnSim.disabled = false;
+            btnSim.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles me-2"></i>Trigger Simulation Cycle`;
+        });
+    });
+
+    // Initialize with first selection
+    if (selector.value) {
+        updateGauges(selector.value);
+    }
+});
+</script>
+{% endblock %}

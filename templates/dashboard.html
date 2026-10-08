@@ -1,0 +1,228 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Dashboard - Precision Crop AI{% endblock %}
+{% block page_title %}Agricultural AI Dashboard{% endblock %}
+
+{% block content %}
+<!-- Metrics cards grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon icon-primary"><i class="fa-solid fa-sprout"></i></div>
+        <div class="stat-info">
+            <h4 id="stat-total">{{ total_plants }}</h4>
+            <p>TOTAL CROPS</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon icon-info"><i class="fa-solid fa-heart-pulse"></i></div>
+        <div class="stat-info">
+            <h4 id="stat-healthy">{{ healthy_plants }}</h4>
+            <p>HEALTHY CROPS</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon icon-danger"><i class="fa-solid fa-shuttle-space"></i></div>
+        <div class="stat-info">
+            <h4 id="stat-diseased">{{ diseased_plants }}</h4>
+            <p>DISEASED CROPS</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon icon-warning"><i class="fa-solid fa-droplet"></i></div>
+        <div class="stat-info">
+            <h4>{{ avg_moisture }}%</h4>
+            <p>AVG MOISTURE</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Chart Column 1: Growth Trend -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card-glass">
+            <div class="card-title-main"><i class="fa-solid fa-chart-line me-2 text-success"></i>Average Height Growth Trend</div>
+            <div style="height: 300px; position: relative;">
+                <canvas id="growthTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chart Column 2: Health Split & Progress -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card-glass text-center">
+            <div class="card-title-main text-start"><i class="fa-solid fa-circle-notch me-2 text-success"></i>Crop Vigor & Health</div>
+            
+            <div class="mb-4" style="height: 180px; position: relative; display: flex; align-items: center; justify-content: center;">
+                <canvas id="healthSplitChart"></canvas>
+            </div>
+            
+            <div class="text-start">
+                <div class="d-flex justify-content-between mb-1" style="font-size: 13px; font-weight: 500;">
+                    <span>System Health Index:</span>
+                    <span>{{ avg_health }}%</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ avg_health }}%;" aria-valuenow="{{ avg_health }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="text-muted mt-2" style="font-size: 11px;">
+                    Average ML predicted health index computed from crop telemetry models.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Crop List Column -->
+    <div class="col-lg-6">
+        <div class="card-glass">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-title-main mb-0"><i class="fa-solid fa-list me-2 text-success"></i>Registered Crops</div>
+                <a href="{{ url_for('plant.list_plants') }}" class="btn btn-outline-success btn-sm px-3 rounded-pill" style="font-size: 12px; font-weight: 500;">View All</a>
+            </div>
+            
+            {% if plants %}
+            <div class="table-responsive">
+                <table class="table align-middle" style="font-size: 13px; color: var(--text-primary);">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th>Name</th>
+                            <th>Crop</th>
+                            <th>Age</th>
+                            <th>Health</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plant in plants %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td class="fw-semibold">{{ plant.name }}</td>
+                            <td>{{ plant.crop_type }}</td>
+                            <td>{{ plant.current_age }} days</td>
+                            <td>
+                                <span class="badge-status {% if plant.status == 'Healthy' %}badge-healthy{% else %}badge-diseased{% endif %}">
+                                    {{ plant.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('plant.plant_detail', plant_id=plant.id) }}" class="btn btn-light btn-sm rounded-circle"><i class="fa-solid fa-arrow-right"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fa-solid fa-seedling fa-2x mb-2 text-secondary"></i>
+                <p style="font-size: 13px;">No crops registered. Add your first crop profile.</p>
+                <a href="{{ url_for('plant.add_plant') }}" class="btn btn-success btn-sm mt-2 rounded-pill px-4">Register Crop</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Notifications / Alerts Column -->
+    <div class="col-lg-6">
+        <div class="card-glass">
+            <div class="card-title-main"><i class="fa-solid fa-bell me-2 text-success"></i>Telemetry & Status Alerts</div>
+            
+            {% if notifications %}
+            <div class="list-group list-group-flush">
+                {% for n in notifications %}
+                <div class="list-group-item bg-transparent d-flex align-items-start gap-3 py-3 px-0 border-0 border-bottom border-light">
+                    <span class="badge bg-{{ n.category }} p-2 rounded-circle mt-1" style="height: 10px; width: 10px;"></span>
+                    <div class="flex-1">
+                        <div class="mb-1" style="font-size: 13px; font-weight: 500;">{{ n.message }}</div>
+                        <div class="text-muted" style="font-size: 11px;">{{ n.timestamp.strftime('%Y-%m-%d %I:%M %p') }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fa-solid fa-circle-check fa-2x mb-2 text-success"></i>
+                <p style="font-size: 13px;">All subsystems normal. No active alerts.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Growth Trend Chart (Height progression)
+    const ctxTrend = document.getElementById('growthTrendChart').getContext('2d');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? '#2d3e33' : '#e9ecef';
+    const textColor = isDark ? '#bdc3c7' : '#7f8c8d';
+
+    new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+            labels: {{ trend_dates | tojson }},
+            datasets: [{
+                label: 'Avg Height (cm)',
+                data: {{ trend_heights | tojson }},
+                borderColor: '#2ecc71',
+                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                borderWidth: 3,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor }
+                },
+                y: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor }
+                }
+            }
+        }
+    });
+
+    // 2. Health Split Chart (Healthy vs Diseased)
+    const ctxHealth = document.getElementById('healthSplitChart').getContext('2d');
+    const total = {{ healthy_plants }} + {{ diseased_plants }};
+    
+    new Chart(ctxHealth, {
+        type: 'doughnut',
+        data: {
+            labels: ['Healthy', 'Diseased'],
+            datasets: [{
+                data: total > 0 ? [{{ healthy_plants }}, {{ diseased_plants }}] : [1, 0],
+                backgroundColor: total > 0 ? ['#2ecc71', '#e74c3c'] : ['#bdc3c7', '#dee2e6'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15,
+                        color: textColor
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
